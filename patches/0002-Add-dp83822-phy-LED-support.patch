@@ -1,0 +1,57 @@
+From e991af1f947f533f96b0478f92b637a1b051a7f4 Mon Sep 17 00:00:00 2001
+From: Miroslav Ondra <ondra@faster.cz>
+Date: Wed, 28 Jan 2026 19:23:39 +0100
+Subject: [PATCH 2/5] Add dp83822 phy LED support
+
+---
+ drivers/net/phy/dp83822.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/drivers/net/phy/dp83822.c b/drivers/net/phy/dp83822.c
+index 3ab64e04a..995befdba 100644
+--- a/drivers/net/phy/dp83822.c
++++ b/drivers/net/phy/dp83822.c
+@@ -32,6 +32,7 @@
+ #define MII_DP83822_FCSCR	0x14
+ #define MII_DP83822_RCSR	0x17
+ #define MII_DP83822_RESET_CTRL	0x1f
++#define MII_DP83822_MLEDCR	0x25
+ #define MII_DP83822_GENCFG	0x465
+ #define MII_DP83822_SOR1	0x467
+ 
+@@ -405,6 +406,13 @@ static int dp83822_read_status(struct phy_device *phydev)
+ 	return 0;
+ }
+ 
++#define MLED_ROUTED_LED_0	0x3
++#define MLED_MOD_LINK_OK	0x0
++#define MLED_MOD_RX_TX		0x1
++#define MLED_MOD_LINK_ACT	0x8
++
++#define MLED_MOD_SHIFT	3
++
+ static int dp83822_config_init(struct phy_device *phydev)
+ {
+ 	struct dp83822_private *dp83822 = phydev->priv;
+@@ -503,6 +511,9 @@ static int dp83822_config_init(struct phy_device *phydev)
+ 				return err;
+ 		}
+ 	}
++	phy_set_bits_mmd(phydev, DP83822_DEVADDR, MII_DP83822_MLEDCR,
++	                 MLED_ROUTED_LED_0 | (MLED_MOD_LINK_ACT<<MLED_MOD_SHIFT));
++
+ 	return dp83822_config_wol(phydev, &dp83822->wol);
+ }
+ 
+@@ -589,6 +600,8 @@ static int dp8382x_config_init(struct phy_device *phydev)
+ {
+ 	struct dp83822_private *dp83822 = phydev->priv;
+ 
++	phy_write(phydev, MII_DP83822_MLEDCR,
++	          MLED_ROUTED_LED_0 | (MLED_MOD_LINK_ACT<<MLED_MOD_SHIFT));
+ 	return dp83822_config_wol(phydev, &dp83822->wol);
+ }
+ 
+-- 
+2.39.5
+

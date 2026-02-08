@@ -1,0 +1,140 @@
+From 9515e926ffe70dbe71cd75a154f88d6b6ebb9583 Mon Sep 17 00:00:00 2001
+From: Miroslav Ondra <ondra@faster.cz>
+Date: Sat, 31 Jan 2026 12:38:09 +0100
+Subject: [PATCH 3/5] Add direct mux driving to spi-imx
+
+---
+ drivers/spi/spi-imx.c | 40 ++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 36 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/spi/spi-imx.c b/drivers/spi/spi-imx.c
+index 94d0f7695..76cdc76ae 100644
+--- a/drivers/spi/spi-imx.c
++++ b/drivers/spi/spi-imx.c
+@@ -24,6 +24,7 @@
+ #include <linux/property.h>
+ 
+ #include <linux/dma/imx-dma.h>
++#include <linux/mux/consumer.h>
+ 
+ #define DRIVER_NAME "spi_imx"
+ 
+@@ -126,6 +127,8 @@ struct spi_imx_data {
+ 	struct completion dma_tx_completion;
+ 
+ 	const struct spi_imx_devtype_data *devtype_data;
++	/* MUX */
++	struct mux_control *mux;
+ };
+ 
+ static inline int is_imx27_cspi(struct spi_imx_data *d)
+@@ -540,7 +543,7 @@ static int mx51_ecspi_prepare_message(struct spi_imx_data *spi_imx,
+ 	u32 testreg, delay;
+ 	u32 cfg = readl(spi_imx->base + MX51_ECSPI_CONFIG);
+ 	u32 current_cfg = cfg;
+-	int channel = mx51_ecspi_channel(spi);
++	int channel = (spi_imx->mux) ? 0 : mx51_ecspi_channel(spi);
+ 
+ 	/* set Host or Target mode */
+ 	if (spi_imx->target_mode)
+@@ -641,7 +644,7 @@ static void mx51_configure_cpha(struct spi_imx_data *spi_imx,
+ 	bool cpha = (spi->mode & SPI_CPHA);
+ 	bool flip_cpha = (spi->mode & SPI_RX_CPHA_FLIP) && spi_imx->rx_only;
+ 	u32 cfg = readl(spi_imx->base + MX51_ECSPI_CONFIG);
+-	int channel = mx51_ecspi_channel(spi);
++	int channel = (spi_imx->mux) ? 0 : mx51_ecspi_channel(spi);
+ 
+ 	/* Flip cpha logical value iff flip_cpha */
+ 	cpha ^= flip_cpha;
+@@ -783,6 +786,7 @@ static int mx31_prepare_transfer(struct spi_imx_data *spi_imx,
+ {
+ 	unsigned int reg = MX31_CSPICTRL_ENABLE | MX31_CSPICTRL_HOST;
+ 	unsigned int clk;
++	u8 chip_select = (spi_imx->mux) ? 0 : spi_get_chipselect(spi, 0);
+ 
+ 	reg |= spi_imx_clkdiv_2(spi_imx->spi_clk, spi_imx->spi_bus_clk, &clk) <<
+ 		MX31_CSPICTRL_DR_SHIFT;
+@@ -802,7 +806,7 @@ static int mx31_prepare_transfer(struct spi_imx_data *spi_imx,
+ 	if (spi->mode & SPI_CS_HIGH)
+ 		reg |= MX31_CSPICTRL_SSPOL;
+ 	if (!spi_get_csgpiod(spi, 0))
+-		reg |= (spi_get_chipselect(spi, 0)) <<
++		reg |= (chip_select) <<
+ 			(is_imx35_cspi(spi_imx) ? MX35_CSPICTRL_CS_SHIFT :
+ 						  MX31_CSPICTRL_CS_SHIFT);
+ 
+@@ -888,6 +892,7 @@ static int mx21_prepare_transfer(struct spi_imx_data *spi_imx,
+ 	unsigned int reg = MX21_CSPICTRL_ENABLE | MX21_CSPICTRL_HOST;
+ 	unsigned int max = is_imx27_cspi(spi_imx) ? 16 : 18;
+ 	unsigned int clk;
++	u8 chip_select = (spi_imx->mux) ? 0 : spi_get_chipselect(spi, 0);
+ 
+ 	reg |= spi_imx_clkdiv_1(spi_imx->spi_clk, spi_imx->spi_bus_clk, max, &clk)
+ 		<< MX21_CSPICTRL_DR_SHIFT;
+@@ -902,7 +907,7 @@ static int mx21_prepare_transfer(struct spi_imx_data *spi_imx,
+ 	if (spi->mode & SPI_CS_HIGH)
+ 		reg |= MX21_CSPICTRL_SSPOL;
+ 	if (!spi_get_csgpiod(spi, 0))
+-		reg |= spi_get_chipselect(spi, 0) << MX21_CSPICTRL_CS_SHIFT;
++		reg |= chip_select << MX21_CSPICTRL_CS_SHIFT;
+ 
+ 	writel(reg, spi_imx->base + MXC_CSPICTRL);
+ 
+@@ -1707,6 +1712,19 @@ static int spi_imx_target_abort(struct spi_controller *controller)
+ 	return 0;
+ }
+ 
++static void spi_imx_set_cs(struct spi_device *spi, bool enable)
++{
++	struct spi_imx_data *spi_imx = spi_controller_get_devdata(spi->controller);
++
++	if (!enable) {
++		if (mux_control_select(spi_imx->mux, spi_get_chipselect(spi, 0) + 1))
++			dev_err(&spi->dev, "setting up the mux for cs %d\n",
++			        spi_get_chipselect(spi, 0));
++	} else {
++		mux_control_deselect(spi_imx->mux);
++	}
++}
++
+ static int spi_imx_probe(struct platform_device *pdev)
+ {
+ 	struct device_node *np = pdev->dev.of_node;
+@@ -1749,6 +1767,15 @@ static int spi_imx_probe(struct platform_device *pdev)
+ 
+ 	spi_imx->devtype_data = devtype_data;
+ 
++	if (of_find_property(np, "mux-controls", NULL)) {
++		spi_imx->mux = devm_mux_control_get(&pdev->dev, NULL);
++		if (IS_ERR_OR_NULL(spi_imx->mux)) {
++			ret = dev_err_probe(&pdev->dev, PTR_ERR(spi_imx->mux),
++			                    "failed to get control-mux\n");
++			goto out_controller_put;
++		}
++	}
++
+ 	/*
+ 	 * Get number of chip selects from device properties. This can be
+ 	 * coming from device tree or boardfiles, if it is not defined,
+@@ -1757,6 +1784,8 @@ static int spi_imx_probe(struct platform_device *pdev)
+ 	 */
+ 	if (!device_property_read_u32(&pdev->dev, "num-cs", &val))
+ 		controller->num_chipselect = val;
++	else if (spi_imx->mux)
++		controller->num_chipselect = mux_control_states(spi_imx->mux)-1;
+ 	else
+ 		controller->num_chipselect = 3;
+ 
+@@ -1789,6 +1818,9 @@ static int spi_imx_probe(struct platform_device *pdev)
+ 		controller->flags |= SPI_CONTROLLER_GPIO_SS;
+ 	}
+ 
++	if (spi_imx->mux)
++		spi_imx->controller->set_cs = spi_imx_set_cs;
++
+ 	spi_imx->spi_drctl = spi_drctl;
+ 
+ 	init_completion(&spi_imx->xfer_done);
+-- 
+2.39.5
+

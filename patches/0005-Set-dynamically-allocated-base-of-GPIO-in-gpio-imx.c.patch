@@ -1,0 +1,25 @@
+From 067e711de4b2622bee55ba40711cec891a77a3e3 Mon Sep 17 00:00:00 2001
+From: Miroslav Ondra <ondra@faster.cz>
+Date: Sat, 31 Jan 2026 23:20:13 +0100
+Subject: [PATCH 5/5] Set dynamically allocated base of GPIO in gpio-imx.c
+
+---
+ drivers/gpio/gpio-mxc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpio/gpio-mxc.c b/drivers/gpio/gpio-mxc.c
+index 619b6fb9d..71910d37f 100644
+--- a/drivers/gpio/gpio-mxc.c
++++ b/drivers/gpio/gpio-mxc.c
+@@ -490,7 +490,7 @@ static int mxc_gpio_probe(struct platform_device *pdev)
+ 	port->gc.request = mxc_gpio_request;
+ 	port->gc.free = mxc_gpio_free;
+ 	port->gc.to_irq = mxc_gpio_to_irq;
+-	port->gc.base = of_alias_get_id(np, "gpio") * 32;
++	port->gc.base = -1; //of_alias_get_id(np, "gpio") * 32;
+ 
+ 	err = devm_gpiochip_add_data(&pdev->dev, &port->gc, port);
+ 	if (err)
+-- 
+2.39.5
+

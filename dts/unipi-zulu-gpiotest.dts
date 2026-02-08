@@ -1,0 +1,52 @@
+// SPDX-License-pcieIdentifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2019 NXP
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/usb/pd.h>
+#include "unipi-zulu.dtsi"
+
+/ {
+	model = "UniPi Zulu board (i.MX8MM) - TEST ENV";
+
+	leds {
+		statusled {
+			default-state = "on";
+		};
+		ethgreen {
+			default-state = "on";
+			linux,default-trigger = "heartbeat";
+		};
+	};
+};
+
+&uart3 { /* console */
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart3>, <&pinctrl_fix_gpio>;
+	status = "okay";
+};
+
+&wdog1 {
+	unipi,test-enabled;
+	status = "okay";
+};
+
+&iomuxc {
+
+	pinctrl_fix_gpio: fixgpiogrp {
+		fsl,pins = <
+			/*MX8MM_IOMUXC_GPIO1_IO15_GPIO1_IO15	0x1c4*/
+			MX8MM_IOMUXC_SD2_CLK_GPIO2_IO13		0x040
+			MX8MM_IOMUXC_SD2_CMD_GPIO2_IO14		0x040
+			MX8MM_IOMUXC_SD2_DATA0_GPIO2_IO15	0x040
+			MX8MM_IOMUXC_SD2_DATA1_GPIO2_IO16	0x040
+			MX8MM_IOMUXC_SD2_DATA2_GPIO2_IO17	0x040
+			MX8MM_IOMUXC_SD2_DATA3_GPIO2_IO18	0x040
+			MX8MM_IOMUXC_GPIO1_IO04_GPIO1_IO4	0x100
+		>;
+	};
+};
+
+#include "unipi-zulu-spinor.dtsi"

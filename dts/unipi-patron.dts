@@ -1,0 +1,145 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2023 Unipi Technology
+ * Copyright 2020 Faster CZ
+ * Copyright 2019 NXP
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/usb/pd.h>
+#include "unipi-zulu.dtsi"
+
+/ {
+	model = "UniPi Patron board (Unipi Zulu, i.MX8MM)";
+	/*model = "UniPi Zulu board (i.MX8MN)"; */
+
+	unipi_id: unipi-id {
+        compatible = "unipi,unipi-id";
+        nvmem = <&unipi_mb>;
+        nvmem-names = "plcid0";
+        id-channel = <&i2c3>;
+    };
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart1>, <&pinctrl_uart1_ctrl>;
+	status = "okay";
+	rts-gpios = <&gpio4 24 GPIO_ACTIVE_HIGH>;
+	// size and count of dma buffer for rx - default is <1024 16>
+	fsl,dma-info = <16 32>;
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart2>, <&pinctrl_uart2_ctrl>;
+	status = "okay";
+	rts-gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
+	// size and count of dma buffer for rx - default is <1024 16>
+	fsl,dma-info = <16 32>;
+	//linux,rs485-enabled-at-boot-time;
+};
+
+&uart3 { /* console */
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart3>, <&pinctrl_uart3_ctrl>;
+	status = "okay";
+	// size and count of dma buffer for rx - default is <1024 16>
+	fsl,dma-info = <16 32>;
+	rts-gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>;
+};
+
+&i2c3 {
+	status = "okay";
+
+    rtc@6f {
+            compatible = "microchip,mcp7941x";
+            reg = <0x6f>;
+			/*
+              interrupt-parent = <&gpio2>;
+			  interrupts = <20 IRQ_TYPE_LEVEL_LOW>;
+			  pinctrl-names = "default";
+			  pinctrl-0 = <&rtc_int>;
+            */
+    };
+
+    w1master:w1master@18 {
+             compatible = "ds2482";
+             reg = <0x18>;
+             status = "disabled";
+    };
+
+    unipi_mb:24c01@57 {
+        compatible = "atmel,24c01";
+        reg = <0x57>;
+        status = "okay";
+    };
+};
+
+&ecspi2 {
+	fsl,spi-num-chipselects = <0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi2>, <&pinctrl_ecspi2_cs>;
+	cs-gpios = <&gpio5 13 1>;
+	status = "disabled";
+};
+
+&ecspi3 {
+        fsl,spi-num-chipselects = <0>;
+        pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi3>, <&pinctrl_ecspi3_cs>;
+        cs-gpios = <&gpio5 25 1>, <&gpio4 25 1>, <&gpio4 26 1>;
+        status = "okay";
+        /* --- BOARDSET OVERLAYS SHOULD BE PLACED HERE --- */
+};
+
+&gpio5 {
+	enable_uart3_rx: enable_uart3_rx {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_uart3_enable>;
+        gpio-hog;
+        gpios = <29 GPIO_ACTIVE_HIGH>;
+        output-high;
+        line-name = "enable-uart3-rx";
+    };
+};
+
+
+&iomuxc {
+
+	pinctrl_ecspi2_cs: ecspi2cs {
+		fsl,pins = <
+			MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13          0x04
+		>;
+	};
+
+	pinctrl_ecspi3_cs: ecspi3cs {
+		fsl,pins = <
+			MX8MM_IOMUXC_UART2_TXD_GPIO5_IO25			0x16
+			MX8MM_IOMUXC_SAI2_TXC_GPIO4_IO25			0x16
+			MX8MM_IOMUXC_SAI2_TXD0_GPIO4_IO26			0x16
+		>;
+	};
+
+	pinctrl_uart3_enable: uart3enagrp {
+		fsl,pins = < /* enable */
+			MX8MM_IOMUXC_UART4_TXD_GPIO5_IO29		0x040
+		>;
+	};
+
+        pinctrl_slotirq1: slotirq1 {
+                fsl,pins = <MX8MM_IOMUXC_I2C4_SCL_GPIO5_IO20    0x19>;
+        };
+        pinctrl_slotirq2: slotirq2 {
+                fsl,pins = <MX8MM_IOMUXC_SAI3_RXD_GPIO4_IO30    0x19>;
+        };
+        pinctrl_slotirq0: slotirq0 {
+                fsl,pins = <MX8MM_IOMUXC_SAI2_RXD0_GPIO4_IO23   0x19>;
+        };
+
+};
+
+&snvs_rtc {
+	status = "disabled";
+};

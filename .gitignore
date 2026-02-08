@@ -1,0 +1,5 @@
+linux/
+dts/.*.cmd
+dts/.*.tmp
+dts/*.dtb
+

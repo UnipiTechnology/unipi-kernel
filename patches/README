@@ -1,0 +1,15 @@
+
+Created from linux source dir by
+
+    git format-patch origin/lf-5.10.y
+
+or:
+
+    git format-patch --start-number=8 -1
+
+Where start-number is current last patch +1
+
+Apply on new repo with 
+    git apply --check [file]
+
+    git am ../patches

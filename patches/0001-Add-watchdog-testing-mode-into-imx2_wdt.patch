@@ -1,0 +1,85 @@
+From dfbff8542f6bb95fd91464778e88eceb947cbcc0 Mon Sep 17 00:00:00 2001
+From: Miroslav Ondra <ondra@faster.cz>
+Date: Tue, 30 Jul 2024 19:13:51 +0200
+Subject: [PATCH 1/5] Add watchdog testing mode into imx2_wdt
+
+---
+ drivers/watchdog/imx2_wdt.c | 27 +++++++++++++++++++++++----
+ 1 file changed, 23 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/watchdog/imx2_wdt.c b/drivers/watchdog/imx2_wdt.c
+index 4b3a192ee..a3dcb205e 100644
+--- a/drivers/watchdog/imx2_wdt.c
++++ b/drivers/watchdog/imx2_wdt.c
+@@ -36,6 +36,7 @@
+ #define IMX2_WDT_WCR		0x00		/* Control Register */
+ #define IMX2_WDT_WCR_WT		(0xFF << 8)	/* -> Watchdog Timeout Field */
+ #define IMX2_WDT_WCR_WDW	BIT(7)		/* -> Watchdog disable for WAIT */
++#define IMX2_WDT_WCR_SRE	BIT(6)		/* -> Software Reset Signal Enable*/
+ #define IMX2_WDT_WCR_WDA	BIT(5)		/* -> External Reset WDOG_B */
+ #define IMX2_WDT_WCR_SRS	BIT(4)		/* -> Software Reset Signal */
+ #define IMX2_WDT_WCR_WRE	BIT(3)		/* -> WDOG Reset Enable */
+@@ -74,6 +75,7 @@ struct imx2_wdt_device {
+ 	bool clk_is_on;
+ 	bool no_ping;
+ 	bool sleep_wait;
++	bool test_enabled;
+ };
+ 
+ static bool nowayout = WATCHDOG_NOWAYOUT;
+@@ -107,7 +109,7 @@ static int imx2_wdt_restart(struct watchdog_device *wdog, unsigned long action,
+ 	if (wdev->ext_reset)
+ 		wcr_enable |= IMX2_WDT_WCR_SRS; /* do not assert int reset */
+ 	else
+-		wcr_enable |= IMX2_WDT_WCR_WDA; /* do not assert ext-reset */
++		wcr_enable |= IMX2_WDT_WCR_WDA | IMX2_WDT_WCR_SRE; /* do not assert ext-reset */
+ 
+ 	/* Assert SRS signal */
+ 	regmap_write(wdev->regmap, IMX2_WDT_WCR, wcr_enable);
+@@ -143,7 +145,7 @@ static inline void imx2_wdt_setup(struct watchdog_device *wdog)
+ 	val &= ~IMX2_WDT_WCR_WT;
+ 	/* Generate internal chip-level reset if WDOG times out */
+ 	if (!wdev->ext_reset)
+-		val &= ~IMX2_WDT_WCR_WRE;
++		val = (val & ~IMX2_WDT_WCR_WRE) | IMX2_WDT_WCR_SRE;
+ 	/* Or if external-reset assert WDOG_B reset only on time-out */
+ 	else
+ 		val |= IMX2_WDT_WCR_WRE;
+@@ -184,8 +186,23 @@ static void __imx2_wdt_set_timeout(struct watchdog_device *wdog,
+ 				   unsigned int new_timeout)
+ {
+ 	struct imx2_wdt_device *wdev = watchdog_get_drvdata(wdog);
+-
+-	regmap_update_bits(wdev->regmap, IMX2_WDT_WCR, IMX2_WDT_WCR_WT,
++	unsigned int wcr_enable;
++
++    printk(KERN_INFO "WD: timeout=%d\n", new_timeout);
++
++    if ((wdev->test_enabled) && ((new_timeout==123)||(new_timeout==122))) {
++        regmap_read(wdev->regmap, IMX2_WDT_WCR, &wcr_enable);
++        printk(KERN_INFO "WD: wcr_enable=%x\n", wcr_enable);
++        wcr_enable |= IMX2_WDT_WCR_SRS;  /* do not assert int reset */
++        if (new_timeout==123)
++            wcr_enable &= ~IMX2_WDT_WCR_WDA;
++        else
++            wcr_enable |= IMX2_WDT_WCR_WDA;
++        regmap_write(wdev->regmap, IMX2_WDT_WCR, wcr_enable);
++        regmap_write(wdev->regmap, IMX2_WDT_WCR, wcr_enable);
++        regmap_write(wdev->regmap, IMX2_WDT_WCR, wcr_enable);
++    } else
++	    regmap_update_bits(wdev->regmap, IMX2_WDT_WCR, IMX2_WDT_WCR_WT,
+ 			   WDOG_SEC_TO_COUNT(new_timeout));
+ }
+ 
+@@ -325,6 +342,8 @@ static int __init imx2_wdt_probe(struct platform_device *pdev)
+ 
+ 	wdev->ext_reset = of_property_read_bool(dev->of_node,
+ 						"fsl,ext-reset-output");
++	wdev->test_enabled = of_property_read_bool(pdev->dev.of_node,
++						"unipi,test-enabled");
+ 
+ 	if (of_property_read_bool(dev->of_node, "fsl,suspend-in-wait")) {
+ 		if (!wdev->data->wdw_supported) {
+-- 
+2.39.5
+
