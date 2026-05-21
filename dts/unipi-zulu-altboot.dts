@@ -12,11 +12,8 @@
 / {
 	model = "Unipi Zulu (Unipi Zulu, i.MX8MM)";
 
-	unipi_id: unipi-id {
-		compatible = "unipi,unipi-id";
-		nvmem = <&unipi_mb>;
-		nvmem-names = "plcid0";
-		id-channel = <&i2c3>;
+	aliases {
+		unipi_mb = &unipi_mb;
 	};
 
 	mbleds {

@@ -2,7 +2,7 @@
 
 set -e
 
-TAG=6.12.66-cip16
+TAG=6.12.88-cip23
 
 create_git_repo()
 {

@@ -10,7 +10,7 @@ for Unipi PLCs and SBC
 
 Build is based on [Linux v6.12.66-cip16](https://git.kernel.org/pub/scm/linux/kernel/git/cip/linux-cip.git)
 
-## How to cross-build kernel on Linux host
+# How to cross-build kernel on Linux host
 
 Required packages - package names are valid for Debian 13
  - build-essential
@@ -23,7 +23,7 @@ Required packages - package names are valid for Debian 13
  - bc
  - wget
 
-### Prepare building environment
+## Prepare building environment
 
 Load source repo on unipi-kernel and download all required sources
 ```
@@ -32,7 +32,7 @@ cd unipi-kernel/
 ./prepare.sh build
 ```
 
-### Compile binaries
+## Compile binaries
 
 Use prepared configuration file for Unipi Zulu.
 ```
@@ -48,7 +48,7 @@ Build kernel, modules and devicetree binaries
 CROSS_COMPILE=aarch64-linux-gnu- ARCH=arm64 make -j <num_of_proc>
 ```
 
-### Installation
+## Installation
 
 Create some directory on filesystem for example /i and copy build artifacts there
 ```

@@ -1,7 +1,7 @@
 From 067e711de4b2622bee55ba40711cec891a77a3e3 Mon Sep 17 00:00:00 2001
 From: Miroslav Ondra <ondra@faster.cz>
 Date: Sat, 31 Jan 2026 23:20:13 +0100
-Subject: [PATCH 5/5] Set dynamically allocated base of GPIO in gpio-imx.c
+Subject: [PATCH] Set dynamically allocated base of GPIO in gpio-imx.c
 
 ---
  drivers/gpio/gpio-mxc.c | 2 +-

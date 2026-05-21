@@ -1,7 +1,7 @@
 From 9515e926ffe70dbe71cd75a154f88d6b6ebb9583 Mon Sep 17 00:00:00 2001
 From: Miroslav Ondra <ondra@faster.cz>
 Date: Sat, 31 Jan 2026 12:38:09 +0100
-Subject: [PATCH 3/5] Add direct mux driving to spi-imx
+Subject: [PATCH] Add direct mux driving to spi-imx
 
 ---
  drivers/spi/spi-imx.c | 40 ++++++++++++++++++++++++++++++++++++----

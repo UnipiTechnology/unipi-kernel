@@ -1,0 +1,56 @@
+From 26178ed386be11bccbcb74110c6287153962b844 Mon Sep 17 00:00:00 2001
+From: Miroslav Ondra <ondra@faster.cz>
+Date: Fri, 13 Feb 2026 10:38:03 +0100
+Subject: [PATCH] serial: 8250_dw: fix broken behavior on Unipi Gate
+
+Signed-off-by: Miroslav Ondra <ondra@faster.cz>
+---
+ drivers/tty/serial/8250/8250_port.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
+index 761fce223..61a769d38 100644
+--- a/drivers/tty/serial/8250/8250_port.c
++++ b/drivers/tty/serial/8250/8250_port.c
+@@ -1416,11 +1416,20 @@ static enum hrtimer_restart serial8250_em485_handle_stop_tx(struct hrtimer *t)
+ 			stop_tx_timer);
+ 	struct uart_8250_port *p = em485->port;
+ 	unsigned long flags;
++	int max_count = 256;
++	u16 lsr;
+ 
+ 	serial8250_rpm_get(p);
+ 	uart_port_lock_irqsave(&p->port, &flags);
+ 	if (em485->active_timer == &em485->stop_tx_timer) {
+ 		p->rs485_stop_tx(p);
++		lsr = serial_in(p, UART_LSR);
++		while (lsr & (UART_LSR_DR | UART_LSR_BI)) {
++			serial_in(p, UART_RX);
++			if (--max_count == 0)
++				break;
++			lsr = serial_in(p, UART_LSR);
++		}
+ 		em485->active_timer = NULL;
+ 		em485->tx_stopped = true;
+ 	}
+@@ -1701,11 +1710,15 @@ void serial8250_read_char(struct uart_8250_port *up, u16 lsr)
+ 		 */
+ 		ch = 0;
+ 
+-	port->icount.rx++;
+-
+ 	lsr |= up->lsr_saved_flags;
+ 	up->lsr_saved_flags = 0;
+ 
++	if (!(up->port.rs485.flags & SER_RS485_RX_DURING_TX) && (up->em485 && !(up->em485->tx_stopped))) {
++		return;
++	}
++
++	port->icount.rx++;
++
+ 	if (unlikely(lsr & UART_LSR_BRK_ERROR_BITS)) {
+ 		if (lsr & UART_LSR_BI) {
+ 			lsr &= ~(UART_LSR_FE | UART_LSR_PE);
+-- 
+2.47.3
+

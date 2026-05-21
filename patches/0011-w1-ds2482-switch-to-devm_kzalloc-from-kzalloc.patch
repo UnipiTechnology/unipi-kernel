@@ -1,0 +1,80 @@
+From a1b2de3df5b009f146de406d1b459b07eb9bab8f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Kry=C5=A1tof=20=C4=8Cern=C3=BD?= <cleverline1mc@gmail.com>
+Date: Fri, 29 Nov 2024 14:25:54 +0100
+Subject: [PATCH] w1: ds2482: switch to devm_kzalloc() from kzalloc()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Refactored the driver to devm_kzalloc() from kzalloc(), so the future
+driver edits are easier and less error-prone.
+
+Signed-off-by: Kryštof Černý <cleverline1mc@gmail.com>
+Link: https://lore.kernel.org/r/20241129-ds2482-add-reg-v6-2-bd95ad171e19@gmail.com
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+
+Backported-by: Kryštof Černý <cleverline1mc@gmail.com>
+---
+ drivers/w1/masters/ds2482.c | 18 +++++-------------
+ 1 file changed, 5 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/w1/masters/ds2482.c b/drivers/w1/masters/ds2482.c
+index a2ecbb863..ea09d2ee2 100644
+--- a/drivers/w1/masters/ds2482.c
++++ b/drivers/w1/masters/ds2482.c
+@@ -451,11 +451,9 @@ static int ds2482_probe(struct i2c_client *client)
+ 				     I2C_FUNC_SMBUS_BYTE))
+ 		return -ENODEV;
+ 
+-	data = kzalloc(sizeof(struct ds2482_data), GFP_KERNEL);
+-	if (!data) {
+-		err = -ENOMEM;
+-		goto exit;
+-	}
++	data = devm_kzalloc(&client->dev, sizeof(struct ds2482_data), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
+ 
+ 	data->client = client;
+ 	i2c_set_clientdata(client, data);
+@@ -463,7 +461,7 @@ static int ds2482_probe(struct i2c_client *client)
+ 	/* Reset the device (sets the read_ptr to status) */
+ 	if (ds2482_send_cmd(data, DS2482_CMD_RESET) < 0) {
+ 		dev_warn(&client->dev, "DS2482 reset failed.\n");
+-		goto exit_free;
++		return err;
+ 	}
+ 
+ 	/* Sleep at least 525ns to allow the reset to complete */
+@@ -474,7 +472,7 @@ static int ds2482_probe(struct i2c_client *client)
+ 	if (temp1 != (DS2482_REG_STS_LL | DS2482_REG_STS_RST)) {
+ 		dev_warn(&client->dev, "DS2482 reset status "
+ 			 "0x%02X - not a DS2482\n", temp1);
+-		goto exit_free;
++		return err;
+ 	}
+ 
+ 	/* Detect the 8-port version */
+@@ -516,9 +514,6 @@ static int ds2482_probe(struct i2c_client *client)
+ 		if (data->w1_ch[idx].pdev != NULL)
+ 			w1_remove_master_device(&data->w1_ch[idx].w1_bm);
+ 	}
+-exit_free:
+-	kfree(data);
+-exit:
+ 	return err;
+ }
+ 
+@@ -532,9 +527,6 @@ static void ds2482_remove(struct i2c_client *client)
+ 		if (data->w1_ch[idx].pdev != NULL)
+ 			w1_remove_master_device(&data->w1_ch[idx].w1_bm);
+ 	}
+-
+-	/* Free the memory */
+-	kfree(data);
+ }
+ 
+ /*
+-- 
+Unipi technology
+

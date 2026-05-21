@@ -1,0 +1,80 @@
+From 7d3a242109ea965df40ca6b26822ea29cf02c9b1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Kry=C5=A1tof=20=C4=8Cern=C3=BD?=
+ <krystof.cerny@unipi.technology>
+Date: Mon, 16 Feb 2026 13:27:39 +0100
+Subject: [PATCH] net: phy: realtek: support for TRIGGER_NETDEV_LINK on
+ RTL8211E and RTL8211F
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch adds support for the TRIGGER_NETDEV_LINK trigger. It activates
+the LED when a link is established, regardless of the speed.
+
+Tested on Orange Pi PC2 with RTL8211E PHY.
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20250825211059.143231-1-olek2@wp.pl
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+Backported for Linux 6.12. Removed support for RTL8211E
+Signed-off-by: Kryštof Černý <krystof.cerny@unipi.technology>
+---
+ drivers/net/phy/realtek.c | 21 +++++++++++++++++----
+ 1 file changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/phy/realtek.c b/drivers/net/phy/realtek.c
+index 4e4e121ed..61bd086f2 100644
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -491,7 +491,8 @@ static int rtl821x_resume(struct phy_device *phydev)
+ static int rtl8211f_led_hw_is_supported(struct phy_device *phydev, u8 index,
+ 					unsigned long rules)
+ {
+-	const unsigned long mask = BIT(TRIGGER_NETDEV_LINK_10) |
++	const unsigned long mask = BIT(TRIGGER_NETDEV_LINK) |
++				   BIT(TRIGGER_NETDEV_LINK_10) |
+ 				   BIT(TRIGGER_NETDEV_LINK_100) |
+ 				   BIT(TRIGGER_NETDEV_LINK_1000) |
+ 				   BIT(TRIGGER_NETDEV_RX) |
+@@ -547,6 +548,12 @@ static int rtl8211f_led_hw_control_get(struct phy_device *phydev, u8 index,
+ 	if (val & RTL8211F_LEDCR_LINK_1000)
+ 		set_bit(TRIGGER_NETDEV_LINK_1000, rules);
+ 
++	if ((val & RTL8211F_LEDCR_LINK_10) &&
++	    (val & RTL8211F_LEDCR_LINK_100) &&
++	    (val & RTL8211F_LEDCR_LINK_1000)) {
++		__set_bit(TRIGGER_NETDEV_LINK, rules);
++	}
++
+ 	if (val & RTL8211F_LEDCR_ACT_TXRX) {
+ 		set_bit(TRIGGER_NETDEV_RX, rules);
+ 		set_bit(TRIGGER_NETDEV_TX, rules);
+@@ -564,14 +571,20 @@ static int rtl8211f_led_hw_control_set(struct phy_device *phydev, u8 index,
+ 	if (index >= RTL8211F_LED_COUNT)
+ 		return -EINVAL;
+ 
+-	if (test_bit(TRIGGER_NETDEV_LINK_10, &rules))
++	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
++	    test_bit(TRIGGER_NETDEV_LINK_10, &rules)) {
+ 		reg |= RTL8211F_LEDCR_LINK_10;
++	}
+ 
+-	if (test_bit(TRIGGER_NETDEV_LINK_100, &rules))
++	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
++	    test_bit(TRIGGER_NETDEV_LINK_100, &rules)) {
+ 		reg |= RTL8211F_LEDCR_LINK_100;
++	}
+ 
+-	if (test_bit(TRIGGER_NETDEV_LINK_1000, &rules))
++	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
++	    test_bit(TRIGGER_NETDEV_LINK_1000, &rules)) {
+ 		reg |= RTL8211F_LEDCR_LINK_1000;
++	}
+ 
+ 	if (test_bit(TRIGGER_NETDEV_RX, &rules) ||
+ 	    test_bit(TRIGGER_NETDEV_TX, &rules)) {
+-- 
+2.47.3
+

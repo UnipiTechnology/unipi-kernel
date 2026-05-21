@@ -1,0 +1,44 @@
+From f3a94ee485c3e3b9092aa12c64c674b80072b639 Mon Sep 17 00:00:00 2001
+From: Miroslav Ondra <ondra@faster.cz>
+Date: Thu, 12 Feb 2026 15:04:50 +0100
+Subject: [PATCH] serial: 8250_dw: rs485: add support for break
+
+Signed-off-by: Miroslav Ondra <ondra@faster.cz>
+---
+ drivers/tty/serial/8250/8250_port.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
+index 61a769d38..502e9fc0c 100644
+--- a/drivers/tty/serial/8250/8250_port.c
++++ b/drivers/tty/serial/8250/8250_port.c
+@@ -2061,9 +2061,26 @@ static void serial8250_break_ctl(struct uart_port *port, int break_state)
+ {
+ 	struct uart_8250_port *up = up_to_u8250p(port);
+ 	unsigned long flags;
++	struct uart_8250_em485 *em485;
+ 
+ 	serial8250_rpm_get(up);
+ 	uart_port_lock_irqsave(port, &flags);
++	if (up->em485) {
++		em485 = up->em485;
++		em485->active_timer = NULL;
++		if (hrtimer_is_queued(&em485->stop_tx_timer))
++			hrtimer_cancel(&em485->stop_tx_timer);
++
++		if (break_state != -1) {
++			up->rs485_stop_tx(up);
++			em485->active_timer = NULL;
++			em485->tx_stopped = true;
++		} else {
++			em485->tx_stopped = false;
++			up->rs485_start_tx(up);
++		}
++	}
++
+ 	if (break_state == -1)
+ 		up->lcr |= UART_LCR_SBC;
+ 	else
+-- 
+2.47.3
+

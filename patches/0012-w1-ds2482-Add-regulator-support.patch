@@ -1,0 +1,53 @@
+From 4526eaf872e3be305a4c31d2a83103f7b361feaf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Kry=C5=A1tof=20=C4=8Cern=C3=BD?= <cleverline1mc@gmail.com>
+Date: Fri, 29 Nov 2024 14:25:55 +0100
+Subject: [PATCH] w1: ds2482: Add regulator support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Adds a support for attaching a supply regulator.
+
+Signed-off-by: Kryštof Černý <cleverline1mc@gmail.com>
+Link: https://lore.kernel.org/r/20241129-ds2482-add-reg-v6-3-bd95ad171e19@gmail.com
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+
+Backported-by: Kryštof Černý <cleverline1mc@gmail.com>
+---
+ drivers/w1/masters/ds2482.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/w1/masters/ds2482.c b/drivers/w1/masters/ds2482.c
+index ea09d2ee2..f8095264d 100644
+--- a/drivers/w1/masters/ds2482.c
++++ b/drivers/w1/masters/ds2482.c
+@@ -15,6 +15,7 @@
+ #include <linux/slab.h>
+ #include <linux/i2c.h>
+ #include <linux/delay.h>
++#include <linux/regulator/consumer.h>
+ 
+ #include <linux/w1.h>
+ 
+@@ -445,6 +446,7 @@ static int ds2482_probe(struct i2c_client *client)
+ 	int err = -ENODEV;
+ 	int temp1;
+ 	int idx;
++	int ret;
+ 
+ 	if (!i2c_check_functionality(client->adapter,
+ 				     I2C_FUNC_SMBUS_WRITE_BYTE_DATA |
+@@ -455,6 +457,10 @@ static int ds2482_probe(struct i2c_client *client)
+ 	if (!data)
+ 		return -ENOMEM;
+ 
++	ret = devm_regulator_get_enable(&client->dev, "vcc");
++	if (ret)
++		return dev_err_probe(&client->dev, ret, "Failed to enable regulator\n");
++
+ 	data->client = client;
+ 	i2c_set_clientdata(client, data);
+ 
+-- 
+Unipi technology
+

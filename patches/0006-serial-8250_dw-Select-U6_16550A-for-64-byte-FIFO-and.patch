@@ -1,0 +1,52 @@
+From ee0c27679dd0fd0983676e510880a95d4c4406fc Mon Sep 17 00:00:00 2001
+From: Miroslav Ondra <ondra@faster.cz>
+Date: Fri, 13 Feb 2026 10:33:53 +0100
+Subject: [PATCH] serial: 8250_dw: Select U6_16550A for 64-byte FIFO and lower
+ default RX trigger
+
+DesignWare 8250 ports with a 64-byte FIFO are currently configured as
+PORT_16550A. Detect the FIFO size and select PORT_U6_16550A when a
+64-byte FIFO is present so the correct configuration is used.
+
+Also lower the default RX trigger level from 32 bytes to 16 bytes.
+Some software expects interrupts at the 16-byte threshold, and using
+32 bytes can cause unexpected latency and compatibility issues.
+
+Signed-off-by: Miroslav Ondra <ondra@faster.cz>
+---
+ drivers/tty/serial/8250/8250_dwlib.c | 2 +-
+ drivers/tty/serial/8250/8250_port.c  | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/tty/serial/8250/8250_dwlib.c b/drivers/tty/serial/8250/8250_dwlib.c
+index b055d89cf..80bf52c83 100644
+--- a/drivers/tty/serial/8250/8250_dwlib.c
++++ b/drivers/tty/serial/8250/8250_dwlib.c
+@@ -285,9 +285,9 @@ void dw8250_setup_port(struct uart_port *p)
+ 
+ 	/* Select the type based on FIFO */
+ 	if (reg & DW_UART_CPR_FIFO_MODE) {
+-		p->type = PORT_16550A;
+ 		p->flags |= UPF_FIXED_TYPE;
+ 		p->fifosize = DW_UART_CPR_FIFO_SIZE(reg);
++		p->type = (p->fifosize == 64) ? PORT_U6_16550A : PORT_16550A;
+ 		up->capabilities = UART_CAP_FIFO | UART_CAP_NOTEMT;
+ 	}
+ 
+diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
+index 03aca7eac..761fce223 100644
+--- a/drivers/tty/serial/8250/8250_port.c
++++ b/drivers/tty/serial/8250/8250_port.c
+@@ -170,7 +170,8 @@ static const struct serial8250_config uart_config[] = {
+ 		.name		= "U6_16550A",
+ 		.fifo_size	= 64,
+ 		.tx_loadsz	= 64,
+-		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
++		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_01 /*UART_FCR_R_TRIG_01*/,
++		.rxtrig_bytes	= {1, 16, 32, 62},
+ 		.flags		= UART_CAP_FIFO | UART_CAP_AFE,
+ 	},
+ 	[PORT_TEGRA] = {
+-- 
+2.47.3
+

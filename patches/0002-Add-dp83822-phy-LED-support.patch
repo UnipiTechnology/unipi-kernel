@@ -1,7 +1,7 @@
 From e991af1f947f533f96b0478f92b637a1b051a7f4 Mon Sep 17 00:00:00 2001
 From: Miroslav Ondra <ondra@faster.cz>
 Date: Wed, 28 Jan 2026 19:23:39 +0100
-Subject: [PATCH 2/5] Add dp83822 phy LED support
+Subject: [PATCH] Add dp83822 phy LED support
 
 ---
  drivers/net/phy/dp83822.c | 13 +++++++++++++
