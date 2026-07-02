@@ -15,7 +15,7 @@
 	aliases {
 		ethernet0 = &gmac2phy;
 		ethernet1 = &gmac2io;
-		unipi_mb = &unipi_mb;
+		unipi-mb = &unipi_mb;
 	};
 
 	/delete-node/ chosen;

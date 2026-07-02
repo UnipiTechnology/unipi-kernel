@@ -24,6 +24,17 @@ wget "https://git.kernel.org/pub/scm/linux/kernel/git/cip/linux-cip.git/snapshot
 mv linux-cip-${TAG} linux
 (
   cd linux
+
+  if [ -n "${CI_COMMIT_TAG}" ]; then
+    LOCALVER=$(echo ${CI_COMMIT_TAG} | awk -F. '{print "+" $NF}')
+  elif [ -n "${CI_COMMIT_SHORT_SHA}" ]; then
+    LOCALVER="-g${CI_COMMIT_SHORT_SHA}"
+  fi
+
+  if [ -n "${LOCALVER}" ]; then
+    sed  "1s/\$/$LOCALVER/" -i localversion-cip
+  fi
+
   if [ "$1" = "build" ]; then
       patch_source ../patches
   else 

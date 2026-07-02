@@ -1,0 +1,39 @@
+From 056da28bc50fc96e731950e36945358bbfb63dd0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Kry=C5=A1tof=20=C4=8Cern=C3=BD?=
+ <krystof.cerny@unipi.technology>
+Date: Thu, 11 Jun 2026 08:31:46 +0200
+Subject: [PATCH] w1: ds2482: Add support for OF driver autoload
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Kryštof Černý <krystof.cerny@unipi.technology>
+---
+ drivers/w1/masters/ds2482.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/w1/masters/ds2482.c b/drivers/w1/masters/ds2482.c
+index f8095264d..4050821f4 100644
+--- a/drivers/w1/masters/ds2482.c
++++ b/drivers/w1/masters/ds2482.c
+@@ -545,9 +545,17 @@ static const struct i2c_device_id ds2482_id[] = {
+ };
+ MODULE_DEVICE_TABLE(i2c, ds2482_id);
+ 
++static const struct of_device_id ds2482_of_match[] = {
++	{ .compatible = "maxim,ds2482", },
++	{ .compatible = "maxim,ds2484", },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, ds2482_of_match);
++
+ static struct i2c_driver ds2482_driver = {
+ 	.driver = {
+ 		.name	= "ds2482",
++		.of_match_table  = ds2482_of_match,
+ 	},
+ 	.probe		= ds2482_probe,
+ 	.remove		= ds2482_remove,
+-- 
+Unipi technology
+
