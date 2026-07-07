@@ -2,7 +2,7 @@
 
 set -e
 
-TAG=6.12.88-cip23
+TAG=6.12.94-cip26
 
 create_git_repo()
 {
@@ -37,7 +37,7 @@ mv linux-cip-${TAG} linux
 
   if [ "$1" = "build" ]; then
       patch_source ../patches
-  else 
+  else
       create_git_repo ../patches
   fi
 )
