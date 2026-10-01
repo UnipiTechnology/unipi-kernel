@@ -2,7 +2,7 @@
 
 set -e
 
-TAG=6.12.94-cip26
+. ./upstream.env
 
 create_git_repo()
 {
@@ -19,7 +19,11 @@ patch_source()
     done
 }
 
-wget "https://git.kernel.org/pub/scm/linux/kernel/git/cip/linux-cip.git/snapshot/linux-cip-${TAG}.tar.gz" -q -O- | tar xz
+wget "${CIP_REPO}/snapshot/linux-cip-${TAG}.tar.gz" -q -O- | tar xz
+
+# Fetch cip-kernel-sec for VEX generation (needed at build time).
+# Shallow clone keeps it small (~80 MB).
+git clone --depth=1 "${ADVISORIES}" cip-kernel-sec
 
 mv linux-cip-${TAG} linux
 (
