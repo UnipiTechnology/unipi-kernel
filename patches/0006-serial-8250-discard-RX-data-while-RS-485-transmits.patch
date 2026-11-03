@@ -1,7 +1,24 @@
 From 26178ed386be11bccbcb74110c6287153962b844 Mon Sep 17 00:00:00 2001
 From: Miroslav Ondra <ondra@faster.cz>
 Date: Fri, 13 Feb 2026 10:38:03 +0100
-Subject: [PATCH] serial: 8250_dw: fix broken behavior on Unipi Gate
+Subject: [PATCH] serial: 8250: discard RX data while RS-485 transmits
+
+When RS-485 is enabled without SER_RS485_RX_DURING_TX, em485 start_tx
+only masks the receive interrupts. The interrupt handler still drains
+the RX FIFO when it handles a THRE interrupt, so anything the UART
+receives while transmitting is passed to userspace.
+
+On boards without a bias resistor on the RS-485 bus, such as the Unipi
+Gate (Rockchip RK3328), the line is undefined around the direction
+switch of the transceiver. The UART then receives bogus characters
+whenever the transmitter is enabled or disabled.
+
+Drop received characters in serial8250_read_char() while em485 is
+transmitting and RX during TX is not requested. Also drain the bogus
+characters left in the RX FIFO when the stop timer disables the
+transmitter.
+
+Only the PIO receive path is covered.
 
 Signed-off-by: Miroslav Ondra <ondra@faster.cz>
 ---
@@ -52,5 +69,5 @@ index 761fce223..61a769d38 100644
  		if (lsr & UART_LSR_BI) {
  			lsr &= ~(UART_LSR_FE | UART_LSR_PE);
 -- 
-2.47.3
+Unipi technology
 

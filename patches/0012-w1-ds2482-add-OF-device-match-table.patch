@@ -1,12 +1,21 @@
 From 056da28bc50fc96e731950e36945358bbfb63dd0 Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Kry=C5=A1tof=20=C4=8Cern=C3=BD?=
- <krystof.cerny@unipi.technology>
-Date: Thu, 11 Jun 2026 08:31:46 +0200
-Subject: [PATCH] w1: ds2482: Add support for OF driver autoload
+From: =?UTF-8?q?Kry=C5=A1tof=20=C4=8Cern=C3=BD?= <cleverline1mc@gmail.com>
+Date: Fri, 12 Jun 2026 09:55:07 +0200
+Subject: [PATCH] w1: ds2482: add OF device match table
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
+commit 53f33fd74d3993af0fbb5494b5be709f6ca6b712 upstream.
+
+Add an of_device_id table and hook it into the i2c driver so the
+ds2482/ds2484 can be matched and auto-probed from Device Tree.
+
+This allows automatic module loading when instantiated via DT.
+
+Signed-off-by: Kryštof Černý <cleverline1mc@gmail.com>
+Link: https://patch.msgid.link/20260612-w1-of-autoload-v1-1-74e8a17626e6@gmail.com
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
 Signed-off-by: Kryštof Černý <krystof.cerny@unipi.technology>
 ---
  drivers/w1/masters/ds2482.c | 8 ++++++++

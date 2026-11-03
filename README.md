@@ -5,10 +5,10 @@ for Unipi PLCs and SBC
  
  - Unipi Zulu - mini SBC with NXP i.MX8M Mini
  - Unipi Patron - PLC with Unipi Zulu
- - Unipi G1 - PLC with Rockchip RK3328 (Not finished yet!)
+ - Unipi G1 - PLC with Rockchip RK3328
  - Unipi Edge - PLC with Raspberry Pi CM40 (Not finished yet!)
 
-Build is based on [Linux v6.12.66-cip16](https://git.kernel.org/pub/scm/linux/kernel/git/cip/linux-cip.git)
+Build is based on [Linux CIP](https://git.kernel.org/pub/scm/linux/kernel/git/cip/linux-cip.git)
 
 # How to cross-build kernel on Linux host
 
@@ -22,6 +22,7 @@ Required packages - package names are valid for Debian 13
  - libncurses-dev
  - bc
  - wget
+ - python3
 
 ## Prepare building environment
 
@@ -34,7 +35,9 @@ cd unipi-kernel/
 
 ## Compile binaries
 
-Use prepared configuration file for Unipi Zulu.
+The kernel configuration is assembled at build time from Kconfig fragments in
+`configs/fragments/` (see `configs/README.md`); no defconfig is committed.
+Use the prepared configuration for Unipi Zulu.
 ```
   CROSS_COMPILE=aarch64-linux-gnu- ARCH=arm64 make unipi-zulu_defconfig
 ```

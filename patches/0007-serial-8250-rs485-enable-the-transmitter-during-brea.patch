@@ -1,7 +1,16 @@
 From f3a94ee485c3e3b9092aa12c64c674b80072b639 Mon Sep 17 00:00:00 2001
 From: Miroslav Ondra <ondra@faster.cz>
 Date: Thu, 12 Feb 2026 15:04:50 +0100
-Subject: [PATCH] serial: 8250_dw: rs485: add support for break
+Subject: [PATCH] serial: 8250: rs485: enable the transmitter during break
+
+serial8250_break_ctl() only sets or clears LCR[SBC]. With em485 the
+RS-485 driver is disabled while the line is idle, so a break requested
+through TIOCSBRK or tcsendbreak() never reaches the bus.
+
+Enable the driver with rs485_start_tx() when the break starts, and
+disable it with rs485_stop_tx() when the break ends. Cancel a pending
+delayed stop first, so that it cannot turn the driver off in the middle
+of the break.
 
 Signed-off-by: Miroslav Ondra <ondra@faster.cz>
 ---
@@ -40,5 +49,5 @@ index 61a769d38..502e9fc0c 100644
  		up->lcr |= UART_LCR_SBC;
  	else
 -- 
-2.47.3
+Unipi technology
 

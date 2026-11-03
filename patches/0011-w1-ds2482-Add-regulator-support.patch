@@ -6,13 +6,14 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
+commit 6e0bb206c6af6c8775b447b2fae9209f02f13143 upstream.
+
 Adds a support for attaching a supply regulator.
 
 Signed-off-by: Kryštof Černý <cleverline1mc@gmail.com>
 Link: https://lore.kernel.org/r/20241129-ds2482-add-reg-v6-3-bd95ad171e19@gmail.com
 Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
-
-Backported-by: Kryštof Černý <cleverline1mc@gmail.com>
+Signed-off-by: Kryštof Černý <krystof.cerny@unipi.technology>
 ---
  drivers/w1/masters/ds2482.c | 6 ++++++
  1 file changed, 6 insertions(+)

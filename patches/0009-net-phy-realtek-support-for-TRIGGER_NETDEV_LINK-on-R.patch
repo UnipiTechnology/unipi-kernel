@@ -1,12 +1,13 @@
 From 7d3a242109ea965df40ca6b26822ea29cf02c9b1 Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Kry=C5=A1tof=20=C4=8Cern=C3=BD?=
- <krystof.cerny@unipi.technology>
-Date: Mon, 16 Feb 2026 13:27:39 +0100
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Mon, 25 Aug 2025 23:09:49 +0200
 Subject: [PATCH] net: phy: realtek: support for TRIGGER_NETDEV_LINK on
  RTL8211E and RTL8211F
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
+
+commit f63f21e82ecafd288b100ea161247820bf1e92c4 upstream.
 
 This patch adds support for the TRIGGER_NETDEV_LINK trigger. It activates
 the LED when a link is established, regardless of the speed.
@@ -17,8 +18,7 @@ Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
 Reviewed-by: Andrew Lunn <andrew@lunn.ch>
 Link: https://patch.msgid.link/20250825211059.143231-1-olek2@wp.pl
 Signed-off-by: Jakub Kicinski <kuba@kernel.org>
-
-Backported for Linux 6.12. Removed support for RTL8211E
+[ Kryštof: dropped the RTL8211E part, 6.12 has no RTL8211E LED support ]
 Signed-off-by: Kryštof Černý <krystof.cerny@unipi.technology>
 ---
  drivers/net/phy/realtek.c | 21 +++++++++++++++++----
@@ -76,5 +76,5 @@ index 4e4e121ed..61bd086f2 100644
  	if (test_bit(TRIGGER_NETDEV_RX, &rules) ||
  	    test_bit(TRIGGER_NETDEV_TX, &rules)) {
 -- 
-2.47.3
+Unipi technology
 

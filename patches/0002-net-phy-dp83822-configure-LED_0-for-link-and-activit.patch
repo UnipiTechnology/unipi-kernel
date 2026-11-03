@@ -1,8 +1,20 @@
 From e991af1f947f533f96b0478f92b637a1b051a7f4 Mon Sep 17 00:00:00 2001
 From: Miroslav Ondra <ondra@faster.cz>
 Date: Wed, 28 Jan 2026 19:23:39 +0100
-Subject: [PATCH] Add dp83822 phy LED support
+Subject: [PATCH] net: phy: dp83822: configure LED_0 for link and activity
 
+The kernel leaves the DP83822 LED configuration at its reset default,
+so LED_0 does not show link and activity the way the boards expect.
+
+Program the MLEDCR register in config_init so that LED_0 is routed to
+the link/activity mode: on while the link is up, blinking on RX/TX
+activity. Do this for both the DP83822 and the DP83825/DP83826 init
+paths.
+
+Upstream has since gained LED hardware control for this PHY through the
+netdev trigger. Drop this patch once the base kernel includes it.
+
+Signed-off-by: Miroslav Ondra <ondra@faster.cz>
 ---
  drivers/net/phy/dp83822.c | 13 +++++++++++++
  1 file changed, 13 insertions(+)
@@ -53,5 +65,5 @@ index 3ab64e04a..995befdba 100644
  }
  
 -- 
-2.39.5
+Unipi technology
 

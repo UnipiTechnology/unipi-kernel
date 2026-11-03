@@ -9,7 +9,7 @@
 #include "unipi-zulu.dtsi"
 
 / {
-	model = "UniPi Zulu board (i.MX8MM) - TEST ENV";
+	model = "Unipi Zulu board (i.MX8MM) - TEST ENV";
 
 	leds {
 		statusled {

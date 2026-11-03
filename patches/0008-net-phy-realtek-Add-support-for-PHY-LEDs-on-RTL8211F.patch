@@ -7,9 +7,15 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Realtek RTL8211F-VD has the same LED configuration as RTL8211F.
-Adding the support for `netdev` trigger.
+commit 752941e3faf6be26c6b5a118e37bdbaea2b97171 upstream.
 
+RTL8211F-VD has the same LED configuration registers as RTL8211F, but
+its driver entry does not provide the LED callbacks. Hook up the
+RTL8211F LED hardware control callbacks, so that the netdev LED trigger
+can be offloaded to the PHY.
+
+[ Kryštof: this patch predates upstream. Upstream uses the renamed
+  rtl8211x_led_hw_is_supported() and the moved realtek_main.c file. ]
 Signed-off-by: Kryštof Černý <krystof.cerny@unipi.technology>
 ---
  drivers/net/phy/realtek.c | 3 +++
@@ -30,5 +36,5 @@ index 8ce5705af..4e4e121ed 100644
  		.name		= "Generic FE-GE Realtek PHY",
  		.match_phy_device = rtlgen_match_phy_device,
 -- 
-2.47.3
+Unipi technology
 

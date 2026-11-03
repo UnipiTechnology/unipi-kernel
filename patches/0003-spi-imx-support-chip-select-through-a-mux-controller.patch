@@ -1,8 +1,26 @@
 From 9515e926ffe70dbe71cd75a154f88d6b6ebb9583 Mon Sep 17 00:00:00 2001
 From: Miroslav Ondra <ondra@faster.cz>
 Date: Sat, 31 Jan 2026 12:38:09 +0100
-Subject: [PATCH] Add direct mux driving to spi-imx
+Subject: [PATCH] spi: imx: support chip select through a mux controller
 
+Some boards do not route the ECSPI SS pins. Instead, the chip select
+lines of the SPI devices come from an external decoder driven by a
+multiplexer that is described with the mux framework.
+
+If the controller node has a "mux-controls" property, use that mux as
+the chip select decoder:
+
+  - mux state 0 means no device is selected (the mux idle state),
+  - mux state N + 1 selects the device on chip select N.
+
+The controller then always uses hardware channel 0, and num-cs defaults
+to the number of mux states minus one when it is not set in the device
+tree. The mux must be configured with idle-state = <0>.
+
+Unlike spi-mux, which routes a real parent chip select, this keeps
+transfers on the synchronous fast path of the SPI core.
+
+Signed-off-by: Miroslav Ondra <ondra@faster.cz>
 ---
  drivers/spi/spi-imx.c | 40 ++++++++++++++++++++++++++++++++++++----
  1 file changed, 36 insertions(+), 4 deletions(-)
@@ -136,5 +154,5 @@ index 94d0f7695..76cdc76ae 100644
  
  	init_completion(&spi_imx->xfer_done);
 -- 
-2.39.5
+Unipi technology
 

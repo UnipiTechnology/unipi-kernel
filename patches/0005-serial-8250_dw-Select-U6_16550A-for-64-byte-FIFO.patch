@@ -1,0 +1,57 @@
+From f19ddb254c3ad5fb7a4ba685e0a6caaacd086391 Mon Sep 17 00:00:00 2001
+From: Miroslav Ondra <ondra@faster.cz>
+Date: Fri, 13 Feb 2026 10:33:53 +0100
+Subject: [PATCH] serial: 8250_dw: Select U6_16550A for 64-byte FIFO
+
+DesignWare 8250 ports that describe their FIFO in the CPR register are
+always configured as PORT_16550A, regardless of the FIFO depth. On
+UARTs with a 64-byte FIFO, such as those on the Rockchip RK3328, this
+selects the 16-byte rxtrig_bytes table {1, 4, 8, 14}. The rx_trig_bytes
+sysfs attribute then reports 8 bytes while the hardware triggers at 32,
+and writes to it select the wrong trigger levels.
+
+Select PORT_U6_16550A when the CPR reports a 64-byte FIFO. Generic
+autoconfig already assigns this type to a 16550A with a 64-byte FIFO.
+
+PORT_U6_16550A has no rxtrig_bytes table, so add one matching the
+DesignWare FCR RT field: 1 character, FIFO 1/4 full, FIFO 1/2 full and
+FIFO 2 less than full. For a 64-byte FIFO that is 1, 16, 32 and 62
+bytes, the same table as PORT_ALTR_16550_F64, which is also a
+DesignWare core. The default trigger level stays at 1/2 full.
+
+Signed-off-by: Miroslav Ondra <ondra@faster.cz>
+---
+ drivers/tty/serial/8250/8250_dwlib.c | 2 +-
+ drivers/tty/serial/8250/8250_port.c  | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/8250/8250_dwlib.c b/drivers/tty/serial/8250/8250_dwlib.c
+index b055d89cf..80bf52c83 100644
+--- a/drivers/tty/serial/8250/8250_dwlib.c
++++ b/drivers/tty/serial/8250/8250_dwlib.c
+@@ -285,9 +285,9 @@ void dw8250_setup_port(struct uart_port *p)
+ 
+ 	/* Select the type based on FIFO */
+ 	if (reg & DW_UART_CPR_FIFO_MODE) {
+-		p->type = PORT_16550A;
+ 		p->flags |= UPF_FIXED_TYPE;
+ 		p->fifosize = DW_UART_CPR_FIFO_SIZE(reg);
++		p->type = (p->fifosize == 64) ? PORT_U6_16550A : PORT_16550A;
+ 		up->capabilities = UART_CAP_FIFO | UART_CAP_NOTEMT;
+ 	}
+ 
+diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
+index 0d9ff0d5b..648da07ce 100644
+--- a/drivers/tty/serial/8250/8250_port.c
++++ b/drivers/tty/serial/8250/8250_port.c
+@@ -171,6 +171,7 @@ static const struct serial8250_config uart_config[] = {
+ 		.fifo_size	= 64,
+ 		.tx_loadsz	= 64,
+ 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
++		.rxtrig_bytes	= {1, 16, 32, 62},
+ 		.flags		= UART_CAP_FIFO | UART_CAP_AFE,
+ 	},
+ 	[PORT_TEGRA] = {
+-- 
+Unipi technology
+

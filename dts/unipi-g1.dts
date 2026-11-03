@@ -9,7 +9,7 @@
 #include "rk3328-rock-pi-e.dts"
 
 / {
-	model = "UniPi G1xx";
+	model = "Unipi G1 series (ROCK Pi E, rk3328)";
 	compatible = "unipi,g1", "rockchip,rk3328";
 
 	aliases {

@@ -1,8 +1,28 @@
 From dfbff8542f6bb95fd91464778e88eceb947cbcc0 Mon Sep 17 00:00:00 2001
 From: Miroslav Ondra <ondra@faster.cz>
 Date: Tue, 30 Jul 2024 19:13:51 +0200
-Subject: [PATCH] Add watchdog testing mode into imx2_wdt
+Subject: [PATCH] watchdog: imx2_wdt: add test mode for reset outputs
 
+Add a test mode that lets userspace drive the WDOG_B output, so that
+the board reset wiring can be checked during manufacturing without
+waiting for a watchdog timeout.
+
+The test mode is enabled by the "unipi,test-enabled" device tree
+property. In test mode, setting the timeout to one of two magic values
+drives WDOG_B through WCR[WDA] instead of changing the timeout, while
+keeping WCR[SRS] set so that no internal reset is asserted:
+
+  123 - assert WDOG_B
+  122 - deassert WDOG_B
+
+Every timeout change is also logged.
+
+Additionally set WCR[SRE] whenever the internal reset is used, both in
+the timeout setup and in the restart handler.
+
+This is for manufacturing purposes only and is not meant for upstream.
+
+Signed-off-by: Miroslav Ondra <ondra@faster.cz>
 ---
  drivers/watchdog/imx2_wdt.c | 27 +++++++++++++++++++++++----
  1 file changed, 23 insertions(+), 4 deletions(-)
@@ -81,5 +101,5 @@ index 4b3a192ee..a3dcb205e 100644
  	if (of_property_read_bool(dev->of_node, "fsl,suspend-in-wait")) {
  		if (!wdev->data->wdw_supported) {
 -- 
-2.39.5
+Unipi technology
 
